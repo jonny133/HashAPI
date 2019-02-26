@@ -1,9 +1,10 @@
 const express = require('express');
-const router = express.Router();
 const fs = require('fs');
 const Joi = require('joi');
-
 const winston = require('winston');
+const { Algorithm, Path } = require('../validation/definitions.js');
+
+const router = express.Router();
 
 const logger = winston.createLogger({
   level: 'info',
@@ -25,8 +26,6 @@ if (process.env.NODE_ENV !== 'production') {
     }),
   );
 }
-
-const { Algorithm, Path } = require('../validation/definitions.js');
 
 // Check hashing supported by node version used
 let crypto;
@@ -62,10 +61,9 @@ const hasher = (Algorithm, Path) => {
 
 // Routing
 router.use((req, res, next) => {
-  console.log(req.body);
+  // console.log(req.body);
   const { Algorithm, Path } = req.body;
   const inputCheck = validateInput(Algorithm, Path);
-  console.log(inputCheck);
   if (inputCheck.error) {
     // throw inputCheck.error;
     logger.info('Input validation failed with error:');
@@ -85,10 +83,16 @@ router.get('/', async (req, res) => {
   try {
     const hash = await hasher(Algorithm, Path);
     res.status(200).json({ Algorithm, Hash: hash });
-    logger.info('Hash completed successfully and sent 200 Response:');
-    logger.info({ Algorithm: Algorithm, Hash: hash });
+    logger.log(
+      'info',
+      `Hash completed successfully and sent 200 Response with JSON object ${JSON.stringify(
+        {
+          Algorithm: Algorithm,
+          Hash: hash,
+        },
+      )}`,
+    );
   } catch (err) {
-    console.log(err);
     logger.error(`Hash process failed with ${err}`);
     res.status(500).json({
       errorMsg: `${err}`,
